@@ -1,0 +1,41 @@
+name: Encode video for mobile browsers
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/encode-mobile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  encode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Transcode recording to widely-supported H.264 Baseline / AAC
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="public/ilychicaaa/media/para-sa-chica.mp4"
+          test -s "$file"
+          ffmpeg -hide_banner -loglevel warning -y -i "$file" \
+            -vf "fps=30,scale=854:-2:flags=lanczos,format=yuv420p" \
+            -c:v libx264 -preset medium -crf 23 -profile:v baseline -level 3.0 \
+            -maxrate 1800k -bufsize 3600k \
+            -c:a aac -b:a 112k -ar 44100 -ac 2 \
+            -movflags +faststart \
+            "public/ilychicaaa/media/para-sa-chica.mobile.mp4"
+          ffprobe -v error -show_entries stream=codec_name,profile,width,height,avg_frame_rate -of default=noprint_wrappers=1 "public/ilychicaaa/media/para-sa-chica.mobile.mp4"
+          mv "public/ilychicaaa/media/para-sa-chica.mobile.mp4" "$file"
+      - name: Commit mobile-friendly recording
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/ilychicaaa/media/para-sa-chica.mp4
+          git commit -m "Make recording compatible with mobile browsers" || exit 0
+          git push
