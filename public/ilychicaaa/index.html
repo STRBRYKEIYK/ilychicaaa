@@ -43,10 +43,23 @@
 <script>
 (function () {
   const video = document.getElementById('love-video');
-  const prefix = window.location.pathname.startsWith('/ilychicaaa') ? '/ilychicaaa' : '';
-  video.poster = prefix + '/media/poster.jpg';
   const source = video.querySelector('source');
-  source.src = prefix + '/media/para-sa-chica.mp4';
+  const origin = 'https://chica-ilychicaaa.vercel.app';
+  const candidates = [
+    origin + '/media/para-sa-chica.mp4',
+    origin + '/ilychicaaa/media/para-sa-chica.mp4'
+  ];
+  let attempt = 0;
+  video.poster = origin + '/media/poster.jpg';
+  source.src = candidates[attempt];
+  video.addEventListener('error', tryAlternate, true);
+  source.addEventListener('error', tryAlternate);
+  function tryAlternate() {
+    if (++attempt >= candidates.length) return;
+    video.poster = origin + '/ilychicaaa/media/poster.jpg';
+    source.src = candidates[attempt];
+    video.load();
+  }
   video.load();
 })();
 </script>
